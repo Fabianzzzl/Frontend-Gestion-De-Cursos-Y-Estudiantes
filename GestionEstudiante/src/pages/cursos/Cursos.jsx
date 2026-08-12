@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
+import Busqueda from "../../components/busqueda/Busqueda";
+import "../../components/busqueda/busqueda.css";
 import "./cursos.css";
 import {
     alertaExito,
@@ -23,6 +25,7 @@ function Cursos() {
     const [docente, setDocente] = useState("");
     const [editando, setEditando] = useState(null);
     const [cargando, setCargando] = useState(true);
+    const [busqueda, setBusqueda] = useState({ id: "", nombre: "", ciclo: "", id_docente: "" });
 
     const cargarDatos = async () => {
         try {
@@ -47,6 +50,33 @@ function Cursos() {
     useEffect(() => {
         cargarDatos();
     }, []);
+
+    const buscarCursos = async (e) => {
+        e.preventDefault();
+        const params = {};
+        if (busqueda.id) params.id = Number(busqueda.id);
+        if (busqueda.nombre.trim()) params.nombre = busqueda.nombre.trim();
+        if (busqueda.ciclo.trim()) params.ciclo = busqueda.ciclo.trim();
+        if (busqueda.id_docente) params.id_docente = Number(busqueda.id_docente);
+        if (Object.keys(params).length === 0) {
+            await cargarDatos();
+            return;
+        }
+        try {
+            setCargando(true);
+            const respuesta = await api.get(`${API_URL}buscar`, { params });
+            setCursos(respuesta.data);
+        } catch (error) {
+            alertaError(error.response?.data?.detail || "No se pudieron buscar los cursos.");
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const limpiarBusqueda = async () => {
+        setBusqueda({ id: "", nombre: "", ciclo: "", id_docente: "" });
+        await cargarDatos();
+    };
 
     const limpiarFormulario = () => {
         setNombre("");
@@ -212,6 +242,18 @@ function Cursos() {
                     {cursos.length}
                 </span>
             </div>
+
+            <Busqueda
+                campos={[
+                    { name: "id", label: "ID", type: "number", placeholder: "Ej: 1", value: busqueda.id, onChange: (e) => setBusqueda({ ...busqueda, id: e.target.value }) },
+                    { name: "nombre", label: "Curso", placeholder: "Ej: Programación", value: busqueda.nombre, onChange: (e) => setBusqueda({ ...busqueda, nombre: e.target.value }) },
+                    { name: "ciclo", label: "Ciclo", placeholder: "Ej: III", value: busqueda.ciclo, onChange: (e) => setBusqueda({ ...busqueda, ciclo: e.target.value }) },
+                    { name: "id_docente", label: "Docente", type: "select", value: busqueda.id_docente, onChange: (e) => setBusqueda({ ...busqueda, id_docente: e.target.value }), options: [{ value: "", label: "Todos los docentes" }, ...docentes.map((d) => ({ value: String(d.id_docente), label: `Docente ${d.id_docente} - ${d.especialidad}` }))] }
+                ]}
+                onBuscar={buscarCursos}
+                onLimpiar={limpiarBusqueda}
+                cargando={cargando}
+            />
 
             <div className="d-flex justify-content-end mb-4">
                 <button
