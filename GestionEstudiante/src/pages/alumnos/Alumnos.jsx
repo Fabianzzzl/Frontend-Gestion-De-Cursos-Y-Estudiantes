@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
+import Busqueda from "../../components/busqueda/Busqueda";
+import "../../components/busqueda/busqueda.css";
 import "./alumnos.css";
 import {
     alertaExito,
@@ -22,6 +24,7 @@ function Alumnos() {
     const [idDistrito, setIdDistrito] = useState("");
     const [editando, setEditando] = useState(null);
     const [cargando, setCargando] = useState(true);
+    const [busqueda, setBusqueda] = useState({ id: "", codigo: "", dni: "", nombre: "", distrito: "" });
 
     const cargarDatos = async () => {
         try {
@@ -50,6 +53,31 @@ function Alumnos() {
     useEffect(() => {
         cargarDatos();
     }, []);
+
+    const buscarAlumnos = async (e) => {
+        e.preventDefault();
+        const params = Object.fromEntries(
+            Object.entries(busqueda).filter(([, value]) => value.trim() !== "")
+        );
+        if (Object.keys(params).length === 0) {
+            await cargarDatos();
+            return;
+        }
+        try {
+            setCargando(true);
+            const respuesta = await api.get(`${API_URL}buscar`, { params });
+            setAlumnos(respuesta.data);
+        } catch (error) {
+            alertaError(error.response?.data?.detail || "No se pudieron buscar los alumnos.");
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const limpiarBusqueda = async () => {
+        setBusqueda({ id: "", codigo: "", dni: "", nombre: "", distrito: "" });
+        await cargarDatos();
+    };
 
     const limpiarFormulario = () => {
         setCodigo("");
@@ -82,7 +110,7 @@ function Alumnos() {
         }
 
         const datos = {
-            codigo: codigo.trim(),
+            codigo_alumno: codigo.trim(),
             id_persona: Number(idPersona),
             id_distrito: Number(idDistrito)
         };
@@ -109,7 +137,7 @@ function Alumnos() {
     };
 
     const editarAlumno = (alumno) => {
-        setCodigo(alumno.codigo);
+        setCodigo(alumno.codigo_alumno);
         setIdPersona(String(alumno.id_persona));
         setIdDistrito(String(alumno.id_distrito));
         setEditando(alumno.id_alumno);
@@ -164,6 +192,19 @@ function Alumnos() {
                     {alumnos.length}
                 </span>
             </div>
+
+            <Busqueda
+                campos={[
+                    { name: "id", label: "ID", type: "number", placeholder: "Ej: 1", value: busqueda.id, onChange: (e) => setBusqueda({ ...busqueda, id: e.target.value }) },
+                    { name: "codigo", label: "Código", placeholder: "Ej: ALU2026001", value: busqueda.codigo, onChange: (e) => setBusqueda({ ...busqueda, codigo: e.target.value }) },
+                    { name: "dni", label: "DNI", placeholder: "Ej: 71234567", value: busqueda.dni, onChange: (e) => setBusqueda({ ...busqueda, dni: e.target.value }) },
+                    { name: "nombre", label: "Nombre", placeholder: "Ej: Carlos", value: busqueda.nombre, onChange: (e) => setBusqueda({ ...busqueda, nombre: e.target.value }) },
+                    { name: "distrito", label: "Distrito", placeholder: "Ej: Miraflores", value: busqueda.distrito, onChange: (e) => setBusqueda({ ...busqueda, distrito: e.target.value }) }
+                ]}
+                onBuscar={buscarAlumnos}
+                onLimpiar={limpiarBusqueda}
+                cargando={cargando}
+            />
 
             <div className="d-flex justify-content-end mb-4">
                 <button
@@ -316,7 +357,7 @@ function Alumnos() {
                                             <td>{alumno.id_alumno}</td>
                                             <td>
                                                 <strong>
-                                                    {alumno.codigo}
+                                                    {alumno.codigo_alumno}
                                                 </strong>
                                             </td>
                                             <td>
