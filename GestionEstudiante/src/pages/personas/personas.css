@@ -102,3 +102,22 @@
     }
 
 }
+
+
+.personas-search-input {
+    position: relative;
+}
+
+.personas-search-input i {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.personas-search-input .form-control {
+    padding-left: 34px;
+}
