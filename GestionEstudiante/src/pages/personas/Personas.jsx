@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
+import Busqueda from "../../components/busqueda/Busqueda";
+import "../../components/busqueda/busqueda.css";
 import "./personas.css";
 
 import {
@@ -24,6 +26,7 @@ function Personas() {
 
     const [editando, setEditando] = useState(null);
     const [cargando, setCargando] = useState(true);
+    const [busqueda, setBusqueda] = useState({ id: "", dni: "", correo: "", nombre: "", apellido: "" });
 
     const cargarPersonas = async () => {
         try {
@@ -47,6 +50,31 @@ function Personas() {
     useEffect(() => {
         cargarPersonas();
     }, []);
+
+    const buscarPersonas = async (e) => {
+        e.preventDefault();
+        const params = Object.fromEntries(
+            Object.entries(busqueda).filter(([, value]) => value.trim() !== "")
+        );
+        if (Object.keys(params).length === 0) {
+            await cargarPersonas();
+            return;
+        }
+        try {
+            setCargando(true);
+            const respuesta = await api.get(`${API_URL}buscar`, { params });
+            setPersonas(respuesta.data);
+        } catch (error) {
+            alertaError(error.response?.data?.detail || "No se pudieron buscar las personas.");
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const limpiarBusqueda = async () => {
+        setBusqueda({ id: "", dni: "", correo: "", nombre: "", apellido: "" });
+        await cargarPersonas();
+    };
 
     const manejarCambio = (e) => {
         const { name, value } = e.target;
@@ -349,6 +377,80 @@ function Personas() {
                     <h4 className="mb-3">
                         Personas registradas
                     </h4>
+
+                    <form
+                        className="row g-2 mb-4 p-3 bg-light rounded-3 border"
+                        onSubmit={buscarPersonas}
+                    >
+                        <div className="col-md-2">
+                            <label className="form-label mb-1">Buscar por ID</label>
+                            <div className="personas-search-input">
+                                <i className="bi bi-search" aria-hidden="true"></i>
+                                <input type="number" min="1" className="form-control" placeholder="1" value={busqueda.id} onChange={(e) => setBusqueda({ ...busqueda, id: e.target.value })} />
+                            </div>
+                        </div>
+                        <div className="col-md-2">
+                            <label className="form-label mb-1">Buscar por DNI</label>
+                            <div className="personas-search-input">
+                                <i className="bi bi-search" aria-hidden="true"></i>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="12345678"
+                                maxLength="8"
+                                value={busqueda.dni}
+                                onChange={(e) => setBusqueda({ ...busqueda, dni: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="col-md-2">
+                            <label className="form-label mb-1">Buscar por correo</label>
+                            <div className="personas-search-input">
+                                <i className="bi bi-search" aria-hidden="true"></i>
+                                <input
+                                    type="email"
+                                    className="form-control"
+                                    placeholder="persona@gmail.com"
+                                value={busqueda.correo}
+                                onChange={(e) => setBusqueda({ ...busqueda, correo: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="col-md-2">
+                            <label className="form-label mb-1">Nombre</label>
+                            <div className="personas-search-input">
+                                <i className="bi bi-search" aria-hidden="true"></i>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="Carlos"
+                                value={busqueda.nombre}
+                                onChange={(e) => setBusqueda({ ...busqueda, nombre: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="col-md-2">
+                            <label className="form-label mb-1">Apellido</label>
+                            <div className="personas-search-input">
+                                <i className="bi bi-search" aria-hidden="true"></i>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="Ramirez"
+                                value={busqueda.apellido}
+                                onChange={(e) => setBusqueda({ ...busqueda, apellido: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="col-md-2 d-flex align-items-end gap-2">
+                            <button type="submit" className="btn btn-primary flex-fill">
+                                Buscar
+                            </button>
+                            <button type="button" className="btn btn-secondary" onClick={limpiarBusqueda}>
+                                Limpiar
+                            </button>
+                        </div>
+                    </form>
 
                     {cargando ? (
                         <div className="text-center py-4">
