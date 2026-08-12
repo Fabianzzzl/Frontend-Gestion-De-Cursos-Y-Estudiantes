@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
+import Busqueda from "../../components/busqueda/Busqueda";
+import "../../components/busqueda/busqueda.css";
 import "./matriculas.css";
 
 import {
@@ -26,6 +28,7 @@ function Matriculas() {
 
     const [editando, setEditando] = useState(null);
     const [cargando, setCargando] = useState(true);
+    const [busqueda, setBusqueda] = useState({ id: "", id_alumno: "", id_curso: "", estado: "" });
 
     const cargarDatos = async () => {
         try {
@@ -63,6 +66,33 @@ function Matriculas() {
     useEffect(() => {
         cargarDatos();
     }, []);
+
+    const buscarMatriculas = async (e) => {
+        e.preventDefault();
+        const params = {};
+        if (busqueda.id) params.id = Number(busqueda.id);
+        if (busqueda.id_alumno) params.id_alumno = Number(busqueda.id_alumno);
+        if (busqueda.id_curso) params.id_curso = Number(busqueda.id_curso);
+        if (busqueda.estado) params.estado = busqueda.estado;
+        if (Object.keys(params).length === 0) {
+            await cargarDatos();
+            return;
+        }
+        try {
+            setCargando(true);
+            const respuesta = await api.get(`${API_MATRICULAS}buscar`, { params });
+            setMatriculas(respuesta.data);
+        } catch (error) {
+            alertaError(error.response?.data?.detail || "No se pudieron buscar las matrículas.");
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const limpiarBusqueda = async () => {
+        setBusqueda({ id: "", id_alumno: "", id_curso: "", estado: "" });
+        await cargarDatos();
+    };
 
     const limpiarFormulario = () => {
         setFechaMatricula("");
@@ -407,6 +437,18 @@ function Matriculas() {
                     </div>
                 </div>
             )}
+
+            <Busqueda
+                campos={[
+                    { name: "id", label: "ID", type: "number", placeholder: "Ej: 1", value: busqueda.id, onChange: (e) => setBusqueda({ ...busqueda, id: e.target.value }) },
+                    { name: "id_alumno", label: "Alumno", type: "select", value: busqueda.id_alumno, onChange: (e) => setBusqueda({ ...busqueda, id_alumno: e.target.value }), options: [{ value: "", label: "Todos los alumnos" }, ...alumnos.map((a) => ({ value: String(a.id_alumno), label: `${a.codigo_alumno}` }))] },
+                    { name: "id_curso", label: "Curso", type: "select", value: busqueda.id_curso, onChange: (e) => setBusqueda({ ...busqueda, id_curso: e.target.value }), options: [{ value: "", label: "Todos los cursos" }, ...cursos.map((c) => ({ value: String(c.id_curso), label: c.nombre }))] },
+                    { name: "estado", label: "Estado", type: "select", value: busqueda.estado, onChange: (e) => setBusqueda({ ...busqueda, estado: e.target.value }), options: [{ value: "", label: "Todos los estados" }, { value: "ACTIVO", label: "ACTIVO" }, { value: "RETIRADO", label: "RETIRADO" }, { value: "FINALIZADO", label: "FINALIZADO" }] }
+                ]}
+                onBuscar={buscarMatriculas}
+                onLimpiar={limpiarBusqueda}
+                cargando={cargando}
+            />
 
             <div className="card shadow-sm mt-4">
                 <div className="card-body">
