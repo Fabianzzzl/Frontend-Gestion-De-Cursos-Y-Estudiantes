@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
-
 import Login from "./pages/login/Login";
 import Dashboard from "./pages/dashboard/Dashboard";
 import Personas from "./pages/personas/Personas";
@@ -10,21 +9,26 @@ import Docentes from "./pages/docentes/Docentes";
 import Cursos from "./pages/cursos/Cursos";
 import Matriculas from "./pages/matriculas/Matriculas";
 import Historial from "./pages/registros/Registros";
-
 import Menu from "./components/menu/Menu";
 import Header from "./components/header/Header";
-
 import logo from "./assets/logo_1.png";
+import { confirmarAccion } from "./utils/alertas";
 
 function Sistema() {
     const navigate = useNavigate();
     const [menuAbierto, setMenuAbierto] = useState(false);
 
-    const cerrarSesion = () => {
+    const cerrarSesion = async () => {
+        const confirmado = await confirmarAccion(
+            "¿Está seguro de salir del sistema?"
+        );
+
+        if (!confirmado) return;
+
         sessionStorage.removeItem("sesion");
         sessionStorage.removeItem("usuario");
         setMenuAbierto(false);
-        navigate("/login");
+        navigate("/login", { replace: true });
     };
 
     const cambiarPagina = (pagina) => {
