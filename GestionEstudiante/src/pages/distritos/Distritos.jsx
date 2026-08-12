@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
+import Busqueda from "../../components/busqueda/Busqueda";
+import "../../components/busqueda/busqueda.css";
 
 import "./distritos.css";
 
@@ -27,6 +29,7 @@ function Distritos() {
     const [editando, setEditando] = useState(null);
 
     const [cargando, setCargando] = useState(true);
+    const [busqueda, setBusqueda] = useState({ id: "", nombre: "" });
 
     // =========================================================
     // OBTENER DISTRITOS
@@ -71,6 +74,31 @@ function Distritos() {
         cargarDistritos();
 
     }, []);
+
+    const buscarDistritos = async (e) => {
+        e.preventDefault();
+        if (!busqueda.id && !busqueda.nombre.trim()) {
+            await cargarDistritos();
+            return;
+        }
+        try {
+            setCargando(true);
+            const params = {};
+            if (busqueda.id) params.id = Number(busqueda.id);
+            if (busqueda.nombre.trim()) params.nombre = busqueda.nombre.trim();
+            const respuesta = await api.get(`${API_URL}buscar`, { params });
+            setDistritos(respuesta.data);
+        } catch (error) {
+            alertaError(error.response?.data?.detail || "No se pudieron buscar los distritos.");
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const limpiarBusqueda = async () => {
+        setBusqueda({ id: "", nombre: "" });
+        await cargarDistritos();
+    };
 
     // =========================================================
     // LIMPIAR FORMULARIO
@@ -283,6 +311,16 @@ function Distritos() {
             {/* =================================================
                 BOTÓN REGISTRAR / OCULTAR
             ================================================= */}
+
+            <Busqueda
+                campos={[
+                    { name: "id", label: "ID", type: "number", placeholder: "Ej: 1", value: busqueda.id, onChange: (e) => setBusqueda({ ...busqueda, id: e.target.value }) },
+                    { name: "nombre", label: "Distrito", placeholder: "Ej: Miraflores", value: busqueda.nombre, onChange: (e) => setBusqueda({ ...busqueda, nombre: e.target.value }) }
+                ]}
+                onBuscar={buscarDistritos}
+                onLimpiar={limpiarBusqueda}
+                cargando={cargando}
+            />
 
             <div className="d-flex justify-content-end mb-4">
 
