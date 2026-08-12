@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
+import Busqueda from "../../components/busqueda/Busqueda";
+import "../../components/busqueda/busqueda.css";
 import "./docentes.css";
 import {
     alertaExito,
@@ -19,6 +21,7 @@ function Docentes() {
     const [persona, setPersona] = useState("");
     const [editando, setEditando] = useState(null);
     const [cargando, setCargando] = useState(true);
+    const [busqueda, setBusqueda] = useState({ id: "", especialidad: "", nombre: "" });
 
     const cargarDatos = async () => {
         try {
@@ -43,6 +46,31 @@ function Docentes() {
     useEffect(() => {
         cargarDatos();
     }, []);
+
+    const buscarDocentes = async (e) => {
+        e.preventDefault();
+        const params = Object.fromEntries(
+            Object.entries(busqueda).filter(([, value]) => value.trim() !== "")
+        );
+        if (Object.keys(params).length === 0) {
+            await cargarDatos();
+            return;
+        }
+        try {
+            setCargando(true);
+            const respuesta = await api.get(`${API_DOCENTES}buscar`, { params });
+            setDocentes(respuesta.data);
+        } catch (error) {
+            alertaError(error.response?.data?.detail || "No se pudieron buscar los docentes.");
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const limpiarBusqueda = async () => {
+        setBusqueda({ id: "", especialidad: "", nombre: "" });
+        await cargarDatos();
+    };
 
     const limpiarFormulario = () => {
         setEspecialidad("");
@@ -153,6 +181,17 @@ function Docentes() {
                     {docentes.length}
                 </span>
             </div>
+
+            <Busqueda
+                campos={[
+                    { name: "id", label: "ID", type: "number", placeholder: "Ej: 1", value: busqueda.id, onChange: (e) => setBusqueda({ ...busqueda, id: e.target.value }) },
+                    { name: "especialidad", label: "Especialidad", placeholder: "Ej: Programación", value: busqueda.especialidad, onChange: (e) => setBusqueda({ ...busqueda, especialidad: e.target.value }) },
+                    { name: "nombre", label: "Docente", placeholder: "Ej: Sofia", value: busqueda.nombre, onChange: (e) => setBusqueda({ ...busqueda, nombre: e.target.value }) }
+                ]}
+                onBuscar={buscarDocentes}
+                onLimpiar={limpiarBusqueda}
+                cargando={cargando}
+            />
 
             <div className="d-flex justify-content-end mb-4">
                 <button
