@@ -14,12 +14,15 @@ function Historial() {
     const [logs, setLogs] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [limpiando, setLimpiando] = useState(false);
+    const [busqueda, setBusqueda] = useState("");
 
-    const cargarHistorial = async () => {
+    const cargarHistorial = async (termino = busqueda) => {
         try {
             setCargando(true);
 
-            const respuesta = await api.get(API_URL);
+            const respuesta = await api.get(API_URL, {
+                params: termino.trim() ? { buscar: termino.trim() } : undefined
+            });
 
             setLogs(respuesta.data);
 
@@ -41,6 +44,16 @@ function Historial() {
     useEffect(() => {
         cargarHistorial();
     }, []);
+
+    const buscarHistorial = async (e) => {
+        e.preventDefault();
+        await cargarHistorial(busqueda);
+    };
+
+    const limpiarBusqueda = async () => {
+        setBusqueda("");
+        await cargarHistorial("");
+    };
 
     const limpiarHistorial = async () => {
         const confirmado = await confirmarAccion(
@@ -155,6 +168,28 @@ function Historial() {
                     </button>
 
                 </div>
+
+                <form className="historial-search" onSubmit={buscarHistorial}>
+                    <label htmlFor="buscar-historial">Buscar en historial</label>
+                    <div className="historial-search-row">
+                        <div className="historial-search-input">
+                            <i className="bi bi-search" aria-hidden="true"></i>
+                            <input
+                                id="buscar-historial"
+                                type="text"
+                                placeholder="Buscar por hora, nivel o descripción..."
+                                value={busqueda}
+                                onChange={(e) => setBusqueda(e.target.value)}
+                            />
+                        </div>
+                        <button type="submit" className="btn btn-primary" disabled={cargando}>
+                            <i className="bi bi-search"></i> Buscar
+                        </button>
+                        <button type="button" className="btn btn-outline-secondary" onClick={limpiarBusqueda} disabled={cargando}>
+                            Limpiar
+                        </button>
+                    </div>
+                </form>
 
                 {cargando && (
                     <div className="historial-empty">
